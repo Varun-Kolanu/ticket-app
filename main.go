@@ -2,15 +2,25 @@ package main
 
 import (
 	"fmt"
-	"strconv"
+	"sync"
 	"ticket-app/helper"
+	"time"
 )
 
 const conferenceTickets = 50
 
 var remainingTickets uint = conferenceTickets
 var conferenceName = "Go Conference"
-var bookings []map[string]string
+var bookings []UserData
+
+type UserData struct {
+	fName       string
+	sName       string
+	email       string
+	userTickets uint
+}
+
+var wg = sync.WaitGroup{}
 
 func main() {
 
@@ -39,6 +49,8 @@ func main() {
 
 		remainingTickets -= userTickets
 
+		go sendTicket(userTickets, fName, sName, email) // sends it to another thread
+
 		if noTicketsRemaining := remainingTickets == 0; noTicketsRemaining {
 			fmt.Println("Conference is booked out")
 			break
@@ -55,7 +67,7 @@ func greetUsers() {
 func firstNames() []string {
 	var fNames []string
 	for _, booking := range bookings {
-		fNames = append(fNames, booking["fName"])
+		fNames = append(fNames, booking.fName)
 	}
 	return fNames
 }
@@ -78,15 +90,24 @@ func getUserInput() (fName, sName, email string, userTickets uint) {
 
 func bookTickets(fName, sName, email string, userTickets uint) {
 
-	var userData = make(map[string]string)
-	userData["fName"] = fName
-	userData["sName"] = sName
-	userData["email"] = email
-	userData["userTickets"] = strconv.FormatUint(uint64(userTickets), 10)
+	var userData = UserData{
+		fName:       fName,
+		sName:       sName,
+		email:       email,
+		userTickets: userTickets,
+	}
 
 	bookings = append(bookings, userData)
 
 	fmt.Printf("Thank you %s for booking %d tickets. You will receive confirmation email at %s\n", fName, userTickets, email)
 	fmt.Printf("Remaining tickets are: %d\n", remainingTickets)
 	fmt.Printf("Bookings: %v\n", firstNames())
+}
+
+func sendTicket(userTickets uint, fName, sName, email string) {
+	time.Sleep(10 * time.Second)
+	var ticket = fmt.Sprintf("%d tickets for %s %s", userTickets, fName, sName)
+	fmt.Println("################")
+	fmt.Printf("Sending ticket\n%v to %s", ticket, email)
+	fmt.Println("################")
 }
