@@ -26,36 +26,34 @@ func main() {
 
 	greetUsers()
 
-	for {
+	fName, sName, email, userTickets := getUserInput()
+	isValidName, isValidEmail, isUserTicketsValid := helper.Validate(fName, sName, email, userTickets, remainingTickets)
 
-		fName, sName, email, userTickets := getUserInput()
-		isValidName, isValidEmail, isUserTicketsValid := helper.Validate(fName, sName, email, userTickets, remainingTickets)
-
-		if !(isValidName && isValidEmail && isUserTicketsValid) {
-			if !isValidName {
-				fmt.Println("First Name or last name is too short")
-			}
-			if !isValidEmail {
-				fmt.Println("Email is invalid")
-			}
-			if !isUserTicketsValid {
-				fmt.Println("Tickets are invalid")
-			}
-			fmt.Println("Your input data is invalid")
-			continue
+	if !(isValidName && isValidEmail && isUserTicketsValid) {
+		if !isValidName {
+			fmt.Println("First Name or last name is too short")
 		}
-
-		bookTickets(fName, sName, email, userTickets)
-
-		remainingTickets -= userTickets
-
-		go sendTicket(userTickets, fName, sName, email) // sends it to another thread
-
-		if noTicketsRemaining := remainingTickets == 0; noTicketsRemaining {
-			fmt.Println("Conference is booked out")
-			break
+		if !isValidEmail {
+			fmt.Println("Email is invalid")
 		}
+		if !isUserTicketsValid {
+			fmt.Println("Tickets are invalid")
+		}
+		fmt.Println("Your input data is invalid")
 	}
+
+	bookTickets(fName, sName, email, userTickets)
+
+	remainingTickets -= userTickets
+
+	wg.Add(1)                                       // Number of threads to wait for. counter += number
+	go sendTicket(userTickets, fName, sName, email) // sends it to another thread
+
+	if noTicketsRemaining := remainingTickets == 0; noTicketsRemaining {
+		fmt.Println("Conference is booked out")
+	}
+
+	wg.Wait() // Wait till counter = 0
 }
 
 func greetUsers() {
@@ -110,4 +108,5 @@ func sendTicket(userTickets uint, fName, sName, email string) {
 	fmt.Println("################")
 	fmt.Printf("Sending ticket\n%v to %s", ticket, email)
 	fmt.Println("################")
+	wg.Done() // counter--
 }
